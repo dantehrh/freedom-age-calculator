@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Freedom Calculator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  /* ── Range sliders ──────────────────────────────────────────────── */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+    display: block;
+    background: #e5e7eb;
+    padding: 10px 0; /* bigger touch target */
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #111;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.13);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.18); }
+  input[type="range"]::-moz-range-thumb {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid #111;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.13);
+    cursor: pointer;
+  }
+
+  /* ── Freedom Age pop ──────────────────────────────────────────── */
+  @keyframes popIn {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+  .pop { animation: popIn 0.22s cubic-bezier(0.34,1.3,0.64,1) both; }
+
+  /* ── Lead form inputs (kept for any legacy use) ──────────────── */
+  .lead-inp {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: #111;
+    padding: 0 16px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .lead-inp::placeholder { color: #c0c0c0; }
+  .lead-inp:focus { border-color: #111; }
+
+  /* ── Elite Modal ──────────────────────────────────────────────── */
+  #eliteModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #eliteModal.open { display: flex; }
+
+  /* Backdrop: blurs + darkens the dashboard */
+  #modalBackdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: fadeIn 0.25s ease both;
+  }
+
+  /* Modal card */
+  #modalCard {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.22);
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.34,1.1,0.64,1) both;
+  }
+
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+
+  /* Progress bar track */
+  .modal-progress-track {
+    height: 3px;
+    background: #f0f0f0;
+  }
+  .modal-progress-fill {
+    height: 100%;
+    border-radius: 0 99px 99px 0;
+    background: linear-gradient(90deg, #c9a84c, #e8c96d);
+    transition: width 0.45s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* Modal body padding */
+  .modal-body { padding: 28px 28px 32px; }
+
+  /* Step fade transition */
+  .modal-step {
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+  .modal-step.hidden-step {
+    opacity: 0;
+    transform: translateX(18px);
+    pointer-events: none;
+    position: absolute;
+    width: 1px; height: 1px; overflow: hidden;
+  }
+
+  /* Modal field labels */
+  .mf-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    margin-bottom: 6px;
+  }
+
+  /* Modal select */
+  .m-select {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: #111;
+    padding: 0 14px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .m-select:focus { border-color: #c9a84c; }
+
+  /* Modal text input */
+  .m-inp {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: #111;
+    padding: 0 16px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .m-inp::placeholder { color: #c0c0c0; }
+  .m-inp:focus { border-color: #c9a84c; }
+  .m-inp.error, .m-select.error { border-color: #ef4444 !important; }
+
+  /* Multi-select pills */
+  .pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 13px;
+    border-radius: 99px;
+    border: 1.5px solid #e5e7eb;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    background: #fff;
+  }
+  .pill:hover  { border-color: #c9a84c; color: #92702a; }
+  .pill.active { border-color: #c9a84c; background: #fefbf0; color: #92702a; font-weight: 600; }
+  .pill.active::before { content: '✓ '; font-size: 10px; }
+
+  /* Primary CTA button (Step 1) */
+  .btn-primary {
+    width: 100%;
+    height: 52px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    background: #111;
+    cursor: pointer;
+    letter-spacing: -0.1px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover  { background: #222; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* Gold CTA button (Step 2) */
+  .btn-gold {
+    width: 100%;
+    height: 52px;
+    border-radius: 12px;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: #5a3e00;
+    background: linear-gradient(135deg, #c9a84c 0%, #e8c96d 50%, #c9a84c 100%);
+    background-size: 200% 100%;
+    cursor: pointer;
+    letter-spacing: -0.1px;
+    transition: background-position 0.4s ease, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.35);
+  }
+  .btn-gold:hover {
+    background-position: 100% 0;
+    box-shadow: 0 6px 28px rgba(201,168,76,0.5);
+  }
+  .btn-gold:active { transform: scale(0.98); }
+
+  /* Success state */
+  .modal-success {
+    text-align: center;
+    padding: 40px 28px 44px;
+  }
+
+  /* ── Mobile-first column reorder (<lg) ──────────────────────────
+     Visual order on mobile:
+       1. Result (Freedom Age hero)
+       2. Left inputs (Age, Savings)
+       3. Right inputs (Income Target, Yield)
+     The Jollof slider lives in <header> above the grid,
+     so it naturally appears before all columns.
+  ─────────────────────────────────────────────────────────────── */
+  @media (max-width: 1023px) {
+    .col-left   { order: 2; }
+    .col-center { order: 1; }
+    .col-right  { order: 3; }
+
+    /* Compact result card on mobile — remove excessive vertical padding */
+    .result-card { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+
+    /* Freedom Age number: slightly smaller on narrow phones */
+    #freedomAge { font-size: clamp(72px, 22vw, 100px) !important; }
+
+    /* Jollof block in header: more compact on mobile */
+    #jollofBlock { padding: 0.875rem 1rem !important; }
+    #inflationRateDisplay { font-size: 2rem !important; }
+
+    /* Share card: push to bottom of center column naturally */
+    .share-card { margin-top: 1rem; }
+  }
+</style>
+</head>
+<body class="bg-white text-gray-900 min-h-screen">
+
+<div class="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+
+  <!-- ── Dashboard Header ────────────────────────────────────────── -->
+  <header class="mb-6 lg:mb-10">
+
+    <!-- Flag strip — full width -->
+    <div class="flex gap-1 mb-6" style="height:3px;">
+      <div class="flex-1 rounded-full" style="background:#008751;"></div>
+      <div class="flex-1 rounded-full bg-gray-200"></div>
+      <div class="flex-1 rounded-full" style="background:#008751;"></div>
+    </div>
+
+    <!-- Split: headline (left) + Jollof control (right) -->
+    <!-- On mobile: stacks vertically so Jollof appears between headline and grid -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+      <!-- LEFT: headline copy -->
+      <div class="lg:max-w-[520px]">
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-2"
+            style="letter-spacing:-0.03em;">
+          How many more years do you<br class="hidden sm:block"> really have to work?
+        </h1>
+        <p class="text-sm sm:text-base text-gray-400 font-normal leading-relaxed">
+          Move the sliders. See your actual Freedom Age in seconds.
+        </p>
+      </div>
+
+      <!-- RIGHT: Jollof Index — "Global Market Setting" -->
+      <div id="jollofBlock"
+           class="w-full lg:w-[340px] flex-shrink-0 rounded-2xl border p-5 transition-all duration-300"
+           style="border-color:#e5e7eb; background:#f9fafb;">
+
+        <!-- Row: labels + big rate -->
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <p class="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-0.5">
+              Market Environment
+            </p>
+            <p class="text-[11px] font-semibold text-gray-500 mb-2">
+              🍛 Jollof Index — Expected Inflation
+            </p>
+            <span id="warningPill"
+                  class="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full
+                         uppercase tracking-wider transition-all duration-300"
+                  style="background:#dcfce7; color:#166534;">
+              Stable
+            </span>
+          </div>
+          <div id="inflationRateDisplay"
+               class="text-4xl font-bold tracking-tighter leading-none transition-colors duration-300 whitespace-nowrap"
+               style="color:#00875A;">
+            18%
+          </div>
+        </div>
+
+        <!-- Slider -->
+        <input type="range" id="inflationSlider" min="5" max="45" step="1" value="18"
+               oninput="updateJollof(); calculate()">
+
+        <!-- Tick labels -->
+        <div class="flex justify-between mt-2 text-[9px] font-medium text-gray-400">
+          <span>5% Optimistic</span>
+          <span>25% Status Quo</span>
+          <span>45% Hyper</span>
+        </div>
+
+      </div><!-- /jollof -->
+
+    </div><!-- /split -->
+
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════
+       THREE-COLUMN GRID
+       Mobile: stacks vertically
+       Desktop (lg+): left | center | right
+  ═══════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr_1fr] gap-5 mb-7">
+
+    <!-- ── LEFT: Age + Savings ─────────────────────────────────── -->
+    <div class="col-left flex flex-col gap-4">
+
+      <!-- Current Age -->
+      <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+        <div class="mb-3">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 block mb-1">Current Age</span>
+          <p class="text-xs text-gray-500 leading-snug">Where you are today. Time is your biggest asset — or your biggest risk.</p>
+        </div>
+        <div id="ageDisplay"
+             class="text-4xl font-bold tracking-tight text-gray-900 mb-4 leading-none">
+          30 yrs
+        </div>
+        <input type="range" id="currentAge" min="18" max="75" step="1" value="30"
+               oninput="sync('currentAge','ageDisplay', v=>v+' yrs', '#111'); calculate()">
+        <div class="flex justify-between mt-2 text-[10px] text-gray-400 font-medium">
+          <span>18</span><span>75</span>
+        </div>
+      </div>
+
+      <!-- Monthly Savings -->
+      <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+        <div class="mb-3">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 block mb-1">Monthly Savings</span>
+          <p class="text-xs text-gray-500 leading-snug">What you consistently invest matters more than big one-time wins.</p>
+        </div>
+        <div id="savingsDisplay"
+             class="text-4xl font-bold tracking-tight text-gray-900 mb-4 leading-none">
+          ₦100K
+        </div>
+        <input type="range" id="monthlySavings" min="10000" max="5000000" step="10000" value="100000"
+               oninput="sync('monthlySavings','savingsDisplay', fmtN, '#111'); calculate()">
+        <div class="flex justify-between mt-2 text-[10px] text-gray-400 font-medium">
+          <span>₦10K</span><span>₦5M</span>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- ── CENTER: The Big Reveal ──────────────────────────────── -->
+    <div class="col-center result-card rounded-2xl border border-gray-100 shadow-sm bg-white
+                flex flex-col items-center justify-center text-center
+                px-8 py-12 lg:py-6 gap-0 min-h-[340px]">
+
+      <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400 mb-4">
+        Your Freedom Age is
+      </p>
+
+      <!-- Giant number — colour-coded by JS -->
+      <div id="freedomAge"
+           class="font-bold tracking-tighter leading-none mb-2 transition-colors duration-300"
+           style="font-size:clamp(88px,14vw,136px); color:#111;">
+        —
+      </div>
+
+      <p id="freedomLabel" class="text-[15px] font-medium text-gray-400 mb-6 min-h-[22px]"></p>
+
+      <div class="w-full border-t border-gray-100 mb-6"></div>
+
+      <p id="realityCheck"
+         class="text-[13px] text-gray-400 leading-relaxed max-w-[260px]">
+      </p>
+
+      <p id="impossibleMsg"
+         class="hidden text-[14px] font-semibold text-red-500 leading-relaxed max-w-[260px]">
+      </p>
+
+      <!-- ── GROWTH LOOP: Share Your Reality Check ─────────────── -->
+      <div class="share-card w-full mt-6 rounded-xl border border-gray-100 bg-gray-50 p-4 text-left">
+
+        <!-- Card header -->
+        <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 mb-1">
+          📲 Share Your Reality Check
+        </p>
+
+        <!-- Dynamic share preview text -->
+        <p id="sharePreview"
+           class="text-[12px] text-gray-500 leading-relaxed mb-4 min-h-[54px] italic">
+        </p>
+
+        <!-- Button A: Copy for WhatsApp Status -->
+        <button id="copyBtn"
+                onclick="copyShareText()"
+                class="w-full h-11 rounded-xl text-white text-[13px] font-semibold
+                       mb-2 transition-all duration-150 active:scale-[0.97]
+                       flex items-center justify-center gap-2"
+                style="background:#25D366;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.128.557 4.127 1.533 5.862L0 24l6.335-1.61A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.37l-.36-.214-3.727.977.995-3.635-.234-.374A9.818 9.818 0 012.182 12C2.182 6.578 6.578 2.182 12 2.182S21.818 6.578 21.818 12 17.422 21.818 12 21.818z"/>
+          </svg>
+          Copy My Results for WhatsApp Status
+        </button>
+
+        <!-- Button B: Send to Partner -->
+        <a id="waPartnerBtn"
+           href="#"
+           onclick="return openWhatsApp()"
+           class="w-full h-10 rounded-xl border border-gray-200 bg-white
+                  text-[13px] font-medium text-gray-600
+                  transition-all duration-150 active:scale-[0.97] hover:border-gray-300
+                  flex items-center justify-center gap-2">
+          💬 Challenge Your Partner — What's Their Number?
+        </a>
+
+      </div><!-- /share card -->
+
+      <!-- Toast notification -->
+      <div id="copyToast"
+           class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+                  px-5 py-3 rounded-full text-white text-[13px] font-semibold
+                  shadow-lg pointer-events-none select-none
+                  transition-all duration-300 opacity-0 translate-y-2"
+           style="background:#111; white-space:nowrap;">
+        Copied to clipboard! Paste it on your Status.
+      </div>
+
+    </div><!-- /center -->
+
+    <!-- ── RIGHT: Income Target + Yield ───────────────────────── -->
+    <div class="col-right flex flex-col gap-4">
+
+      <!-- Monthly Income Target -->
+      <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+        <div class="mb-3">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 block mb-1">Monthly Income Target</span>
+          <p class="text-xs text-gray-500 leading-snug">What should cover your future lifestyle.</p>
+        </div>
+        <div id="targetDisplay"
+             class="text-4xl font-bold tracking-tight text-gray-900 mb-4 leading-none">
+          ₦400K
+        </div>
+        <input type="range" id="monthlyTarget" min="100000" max="10000000" step="50000" value="400000"
+               oninput="sync('monthlyTarget','targetDisplay', fmtN, '#111'); calculate()">
+        <div class="flex justify-between mt-2 text-[10px] text-gray-400 font-medium">
+          <span>₦100K</span><span>₦10M</span>
+        </div>
+      </div>
+
+      <!-- Annual Investment Yield -->
+      <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+        <div class="mb-3">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 block mb-1">Annual Investment Yield</span>
+          <p class="text-xs text-gray-500 leading-snug">Your return rate is the key behind your freedom.</p>
+        </div>
+        <div id="yieldDisplay"
+             class="text-4xl font-bold tracking-tight text-gray-900 mb-4 leading-none">
+          20%
+        </div>
+        <input type="range" id="investYield" min="5" max="40" step="1" value="20"
+               oninput="sync('investYield','yieldDisplay', v=>v+'%', '#111'); calculate()">
+        <div class="flex justify-between mt-2 text-[10px] text-gray-400 font-medium">
+          <span>5%</span><span>40%</span>
+        </div>
+      </div>
+
+    </div><!-- /right -->
+
+  </div><!-- /grid -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEAD GEN TRIGGER
+  ═══════════════════════════════════════════════════════ -->
+  <div class="max-w-md mx-auto text-center mt-2">
+    <button onclick="openModal()"
+            class="btn-gold inline-flex items-center justify-center gap-2 px-8"
+            style="width:auto; min-width:280px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Get My Private Wealth Briefing
+    </button>
+    <p class="text-[11px] text-gray-300 mt-3">Tailored to your Freedom Age result. Takes 60 seconds.</p>
+  </div>
+
+  <!-- Disclaimer -->
+  <p class="text-center text-[11px] text-gray-300 mt-10 leading-relaxed">
+    Return rate set by the Annual Investment Yield slider (default 20%). Assumes 25-year retirement duration.<br>
+    Exchange rate ₦1,650/$1 (2026 baseline). Projections are illustrative only — not financial advice.
+  </p>
+
+</div><!-- /page wrapper -->
+
+<!-- ═══════════════════════════════════════════════════════
+     ELITE QUALIFICATION MODAL
+═══════════════════════════════════════════════════════ -->
+<div id="eliteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <!-- Blurred backdrop -->
+  <div id="modalBackdrop" onclick="closeModal()"></div>
+
+  <!-- Card -->
+  <div id="modalCard">
+
+    <!-- Progress bar -->
+    <div class="modal-progress-track">
+      <div class="modal-progress-fill" id="progressFill" style="width:50%"></div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Close button -->
+      <button onclick="closeModal()"
+              class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+              style="font-size:18px; line-height:1;" aria-label="Close">✕</button>
+
+      <!-- Step counter -->
+      <div class="flex items-center gap-2 mb-5">
+        <div class="flex gap-1.5">
+          <span id="dot1" class="w-2 h-2 rounded-full transition-colors duration-300" style="background:#111;"></span>
+          <span id="dot2" class="w-2 h-2 rounded-full transition-colors duration-300" style="background:#e5e7eb;"></span>
+        </div>
+        <span id="stepLabel" class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Step 1 of 2</span>
+      </div>
+
+      <!-- ── STEP 1: Wealth Diagnostic ─────────────────────────── -->
+      <div id="step1" class="modal-step">
+
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-500 mb-1">Wealth Diagnostic</p>
+        <h2 id="modalTitle" class="text-xl font-bold tracking-tight text-gray-900 mb-1">
+          Customising your Wealth Plan…
+        </h2>
+        <p class="text-[13px] text-gray-400 mb-6 leading-relaxed">
+          Two quick questions so we match you with the right senior partner.
+        </p>
+
+        <!-- Monthly Investment Capacity -->
+        <div class="mb-5">
+          <label class="mf-label" for="investCapacity">Monthly Investment Capacity</label>
+          <select id="investCapacity" class="m-select">
+            <option value="">Select your range…</option>
+            <option value="50k-100k">₦50,000 – ₦100,000</option>
+            <option value="100k-250k">₦100,000 – ₦250,000</option>
+            <option value="250k-500k">₦250,000 – ₦500,000</option>
+            <option value="500k-1m">₦500,000 – ₦1,000,000</option>
+            <option value="1m-2.5m">₦1,000,000 – ₦2,500,000</option>
+            <option value="2.5m-5m">₦2,500,000 – ₦5,000,000</option>
+            <option value="5m-10m">₦5,000,000 – ₦10,000,000</option>
+            <option value="10m+">₦10,000,000+</option>
+          </select>
+        </div>
+
+        <!-- Asset Portfolio Multi-select -->
+        <div class="mb-7">
+          <label class="mf-label">Current Asset Portfolio <span class="normal-case font-normal text-gray-300">(select all that apply)</span></label>
+          <div class="pill-grid" id="assetPills">
+            <span class="pill" data-val="stocks"      onclick="togglePill(this)">Stocks</span>
+            <span class="pill" data-val="realestate"  onclick="togglePill(this)">Real Estate</span>
+            <span class="pill" data-val="mutualfunds" onclick="togglePill(this)">Mutual Funds</span>
+            <span class="pill" data-val="fixedincome" onclick="togglePill(this)">Fixed Income</span>
+            <span class="pill" data-val="usequities"  onclick="togglePill(this)">US Equities</span>
+            <span class="pill" data-val="privateequity" onclick="togglePill(this)">Private Equity</span>
+            <span class="pill" data-val="dollarassets" onclick="togglePill(this)">Dollar-Denominated</span>
+            <span class="pill" data-val="highyield"   onclick="togglePill(this)">High-Yield Accounts</span>
+          </div>
+          <p id="pillError" class="hidden text-[11px] text-red-500 mt-2">Please select at least one asset class.</p>
+        </div>
+
+        <button class="btn-primary" onclick="goToStep2()">
+          Continue to Private Briefing →
+        </button>
+
+      </div><!-- /step1 -->
+
+      <!-- ── STEP 2: Secure Delivery ────────────────────────────── -->
+      <div id="step2" class="modal-step hidden-step">
+
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-500 mb-1">Private Briefing</p>
+        <h2 class="text-xl font-bold tracking-tight text-gray-900 mb-1">
+          Let's schedule your Private Briefing.
+        </h2>
+        <p class="text-[13px] text-gray-400 mb-6 leading-relaxed">
+          Your personalised wealth report will be ready within 24 hours.
+        </p>
+
+        <div class="flex flex-col gap-4 mb-6">
+
+          <!-- Full Name -->
+          <div>
+            <label class="mf-label" for="mFullName">Full Name</label>
+            <input id="mFullName" class="m-inp" type="text" placeholder="e.g. Chukwuemeka Obi">
+          </div>
+
+          <!-- Corporate Email -->
+          <div>
+            <label class="mf-label" for="mEmail">Corporate Email</label>
+            <input id="mEmail" class="m-inp" type="email" placeholder="you@company.com">
+          </div>
+
+          <!-- WhatsApp + privacy note -->
+          <div>
+            <label class="mf-label" for="mPhone">WhatsApp Number</label>
+            <input id="mPhone" class="m-inp" type="tel" placeholder="+234 801 234 5678">
+            <div class="flex items-start gap-2 mt-2">
+              <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true" style="flex-shrink:0; margin-top:1px;">
+                <rect x="1" y="5.5" width="10" height="8" rx="1.5" stroke="#9ca3af" stroke-width="1.2"/>
+                <path d="M3.5 5.5V4a2.5 2.5 0 015 0v1.5" stroke="#9ca3af" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+              <p class="text-[11px] text-gray-400 leading-relaxed">
+                Your data is encrypted and shared only with our senior wealth partners.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <button class="btn-gold" onclick="submitModal()">
+          🔒 Secure My Briefing
+        </button>
+
+      </div><!-- /step2 -->
+
+      <!-- ── SUCCESS STATE ──────────────────────────────────────── -->
+      <div id="modalSuccess" class="modal-success hidden">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
+             style="background:#fefbf0; border: 1.5px solid #e8c96d;">🎯</div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Briefing Secured.</h3>
+        <p class="text-sm text-gray-400 leading-relaxed max-w-[260px] mx-auto">
+          A senior wealth partner will contact you within 24 hours via WhatsApp and email.
+        </p>
+        <button onclick="closeModal()" class="mt-6 text-[13px] font-semibold text-amber-600 hover:text-amber-800 transition-colors">
+          Return to Calculator →
+        </button>
+      </div>
+
+    </div><!-- /modal-body -->
+  </div><!-- /modalCard -->
+</div><!-- /eliteModal -->
+
+<script>
+// ────────────────────────────────────────────────────────────────────────────
+// MATH (Fisher Equation under the hood)
+// ────────────────────────────────────────────────────────────────────────────
+const RETIREMENT_YEARS = 25;
+const MAX_AGE          = 80;
+
+function realRate(nominal, inflation) {
+  return (1 + nominal) / (1 + inflation) - 1;
+}
+
+function nestedEgg(monthlySpend, nominalReturn, inflation) {
+  const rReal        = realRate(nominalReturn, inflation);
+  const rRealMonthly = Math.pow(1 + rReal, 1 / 12) - 1;
+  const n            = RETIREMENT_YEARS * 12;
+  if (Math.abs(rRealMonthly) < 1e-9) return monthlySpend * n;
+  return monthlySpend * (1 - Math.pow(1 + rRealMonthly, -n)) / rRealMonthly;
+}
+
+function futureSavings(monthly, nominalReturn, years) {
+  const rM = nominalReturn / 12;
+  const mo = years * 12;
+  return rM > 1e-9
+    ? monthly * ((Math.pow(1 + rM, mo) - 1) / rM)
+    : monthly * mo;
+}
+
+function toTodaysMoney(futureAmt, inflation, years) {
+  return futureAmt / Math.pow(1 + inflation, years);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// FORMATTERS
+// ────────────────────────────────────────────────────────────────────────────
+function fmtN(n) {
+  if (n >= 1e9) return '₦' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '₦' + (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '₦' + Math.round(n / 1e3) + 'K';
+  return '₦' + Math.round(n).toLocaleString();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SLIDER UTILITIES
+// ────────────────────────────────────────────────────────────────────────────
+function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function fillTrack(el, color) {
+  const pct = ((parseFloat(el.value) - parseFloat(el.min)) /
+               (parseFloat(el.max)  - parseFloat(el.min))) * 100;
+  el.style.background =
+    `linear-gradient(to right, ${color} ${pct}%, #e5e7eb ${pct}%)`;
+}
+
+function sync(sliderId, displayId, formatter, trackColor) {
+  const el = document.getElementById(sliderId);
+  document.getElementById(displayId).textContent = formatter(parseFloat(el.value));
+  fillTrack(el, trackColor);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// JOLLOF INDEX
+// ────────────────────────────────────────────────────────────────────────────
+function updateJollof() {
+  const val      = getVal('inflationSlider');
+  const rateEl   = document.getElementById('inflationRateDisplay');
+  const pillEl   = document.getElementById('warningPill');
+  const blockEl  = document.getElementById('jollofBlock');
+  const slider   = document.getElementById('inflationSlider');
+
+  rateEl.textContent = val + '%';
+
+  let track, pBg, pColor, border, blockBg, label;
+
+  if (val <= 15) {
+    track='#00875A'; pBg='#dcfce7'; pColor='#166534';
+    border='rgba(0,135,90,0.2)'; blockBg='#f7fffe'; label='Stable';
+  } else if (val <= 25) {
+    track='#d97706'; pBg='#fef3c7'; pColor='#78350f';
+    border='rgba(217,119,6,0.25)'; blockBg='#fffef7'; label='Current Trend';
+  } else {
+    track='#dc2626'; pBg='#fee2e2'; pColor='#991b1b';
+    border='rgba(220,38,38,0.25)'; blockBg='#fffafa'; label='High Risk to Wealth';
+  }
+
+  pillEl.textContent         = label;
+  pillEl.style.background    = pBg;
+  pillEl.style.color         = pColor;
+  rateEl.style.color         = track;
+  blockEl.style.borderColor  = border;
+  blockEl.style.background   = blockBg;
+  fillTrack(slider, track);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// MAIN CALCULATION
+// ────────────────────────────────────────────────────────────────────────────
+function calculate() {
+  const currentAge  = getVal('currentAge');
+  const monthlySav  = getVal('monthlySavings');
+  const monthlyTgt  = getVal('monthlyTarget');
+  const nomReturn   = getVal('investYield') / 100;
+  const inflation   = getVal('inflationSlider') / 100;
+
+  const required = nestedEgg(monthlyTgt, nomReturn, inflation);
+
+  let freedomAge = null;
+  for (let age = currentAge + 1; age <= MAX_AGE; age++) {
+    if (futureSavings(monthlySav, nomReturn, age - currentAge) >= required) {
+      freedomAge = age; break;
+    }
+  }
+
+  const ageEl        = document.getElementById('freedomAge');
+  const labelEl      = document.getElementById('freedomLabel');
+  const checkEl      = document.getElementById('realityCheck');
+  const impossibleEl = document.getElementById('impossibleMsg');
+
+  if (!freedomAge) {
+    ageEl.textContent  = '80+';
+    ageEl.style.color  = '#dc2626';
+    labelEl.textContent = '';
+    checkEl.classList.add('hidden');
+    impossibleEl.classList.remove('hidden');
+    impossibleEl.innerHTML =
+      'At current savings, the target is out of reach by 80. ' +
+      '<strong>Try saving more or lowering your income target.</strong>';
+    updateShareCard(80, 80 - getVal('currentAge'));
+    return;
+  }
+
+  impossibleEl.classList.add('hidden');
+  checkEl.classList.remove('hidden');
+
+  // Colour: green ≤55, amber 56-70, red 71+
+  const ageColor = freedomAge <= 55 ? '#00875A'
+                 : freedomAge <= 70 ? '#d97706'
+                 : '#dc2626';
+
+  ageEl.classList.remove('pop');
+  void ageEl.offsetWidth;
+  ageEl.textContent  = freedomAge;
+  ageEl.style.color  = ageColor;
+  ageEl.classList.add('pop');
+
+  const yrs = freedomAge - currentAge;
+  labelEl.textContent = yrs <= 1
+    ? 'You can retire next year.'
+    : `${yrs} years from now.`;
+
+  const todayEquiv = toTodaysMoney(monthlyTgt, inflation, yrs);
+  checkEl.innerHTML =
+    `In today's money, <strong style="color:#374151">${fmtN(monthlyTgt)}/month</strong> ` +
+    `at retirement will feel like ` +
+    `<strong style="color:#374151">${fmtN(todayEquiv)}/month</strong> now — ` +
+    `because inflation erodes every naira.`;
+
+  updateShareCard(freedomAge, yrs);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// GROWTH LOOP — Share Card
+// ────────────────────────────────────────────────────────────────────────────
+const SITE_URL = 'https://your-app.vercel.app'; // ← replace with your deployed URL
+
+function buildShareText(age, yearsAway) {
+  if (age < 50) {
+    return `I've cracked the code! 🥂 My Freedom Age is ${age}. Financial freedom is closer than I thought. See how your investments stack up: ${SITE_URL}`;
+  } else if (age <= 65) {
+    return `Steady hustle. 📈 My Freedom Age is ${age}. Not bad, but I need to keep an eye on that Jollof Index! Check your Freedom Age here: ${SITE_URL}`;
+  } else {
+    return `Omo! 😱 I just ran my numbers. Because of inflation, my Freedom Age is ${age}. I have to work ${yearsAway} more years! Fix your investment yield here: ${SITE_URL}`;
+  }
+}
+
+function updateShareCard(age, yearsAway) {
+  const preview = document.getElementById('sharePreview');
+  if (!preview) return;
+  const text = buildShareText(age, yearsAway);
+  preview.textContent = text;
+
+  // Keep partner WhatsApp link up to date with current text
+  const btn = document.getElementById('waPartnerBtn');
+  if (btn) btn.dataset.watext = text;
+}
+
+function copyShareText() {
+  const preview = document.getElementById('sharePreview');
+  const text    = preview ? preview.textContent : '';
+  if (!text) return;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showToast).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); showToast(); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function openWhatsApp() {
+  const btn  = document.getElementById('waPartnerBtn');
+  const text = (btn && btn.dataset.watext) || document.getElementById('sharePreview').textContent;
+  const url  = 'whatsapp://send?text=' + encodeURIComponent(text);
+  window.location.href = url;
+  return false; // prevent default <a> navigation
+}
+
+function showToast() {
+  const toast = document.getElementById('copyToast');
+  if (!toast) return;
+  // Slide in
+  toast.style.opacity    = '1';
+  toast.style.transform  = 'translateX(-50%) translateY(0)';
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.style.opacity   = '0';
+    toast.style.transform = 'translateX(-50%) translateY(8px)';
+  }, 2200);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// ELITE MODAL
+// ────────────────────────────────────────────────────────────────────────────
+let _currentStep = 1;
+
+function openModal() {
+  _currentStep = 1;
+  document.getElementById('eliteModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setStep(1, false);
+}
+
+function closeModal() {
+  document.getElementById('eliteModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+function setStep(n, animate) {
+  _currentStep = n;
+
+  const s1 = document.getElementById('step1');
+  const s2 = document.getElementById('step2');
+  const success = document.getElementById('modalSuccess');
+  const fill   = document.getElementById('progressFill');
+  const label  = document.getElementById('stepLabel');
+  const dot1   = document.getElementById('dot1');
+  const dot2   = document.getElementById('dot2');
+
+  // Hide success, show steps
+  success.classList.add('hidden');
+
+  if (n === 1) {
+    s1.classList.remove('hidden-step');
+    s2.classList.add('hidden-step');
+    fill.style.width = '50%';
+    label.textContent = 'Step 1 of 2';
+    dot1.style.background = '#111';
+    dot2.style.background = '#e5e7eb';
+  } else {
+    s1.classList.add('hidden-step');
+    s2.classList.remove('hidden-step');
+    fill.style.width = '100%';
+    label.textContent = 'Step 2 of 2';
+    dot1.style.background = '#c9a84c';
+    dot2.style.background = '#111';
+  }
+}
+
+function togglePill(el) {
+  el.classList.toggle('active');
+  document.getElementById('pillError').classList.add('hidden');
+}
+
+function goToStep2() {
+  // Validate Step 1
+  const cap = document.getElementById('investCapacity');
+  const activePills = document.querySelectorAll('#assetPills .pill.active');
+  let valid = true;
+
+  if (!cap.value) {
+    cap.classList.add('error');
+    cap.addEventListener('change', () => cap.classList.remove('error'), { once: true });
+    valid = false;
+  }
+  if (activePills.length === 0) {
+    document.getElementById('pillError').classList.remove('hidden');
+    valid = false;
+  }
+  if (!valid) return;
+
+  setStep(2, true);
+}
+
+function submitModal() {
+  const name  = document.getElementById('mFullName').value.trim();
+  const email = document.getElementById('mEmail').value.trim();
+  const phone = document.getElementById('mPhone').value.trim();
+  let valid = true;
+
+  [{ id:'mFullName', val:name }, { id:'mEmail', val:email }, { id:'mPhone', val:phone }]
+    .forEach(({ id, val }) => {
+      const el = document.getElementById(id);
+      if (!val) {
+        el.classList.add('error');
+        el.addEventListener('input', () => el.classList.remove('error'), { once: true });
+        valid = false;
+      }
+    });
+
+  if (!valid) return;
+
+  // Show success
+  document.getElementById('step2').classList.add('hidden-step');
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('modalSuccess').classList.remove('hidden');
+  document.getElementById('stepLabel').textContent = 'Complete';
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────────────────────────────
+sync('currentAge',    'ageDisplay',     v => v + ' yrs', '#111');
+sync('monthlySavings','savingsDisplay', fmtN,            '#111');
+sync('monthlyTarget', 'targetDisplay',  fmtN,            '#111');
+sync('investYield',   'yieldDisplay',   v => v + '%',    '#111');
+updateJollof();
+calculate();
+</script>
+</body>
+</html>

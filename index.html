@@ -1000,7 +1000,7 @@ function goToStep2() {
   setStep(2, true);
 }
 
-function submitModal() {
+async function submitModal() {
   const name  = document.getElementById('mFullName').value.trim();
   const email = document.getElementById('mEmail').value.trim();
   const phone = document.getElementById('mPhone').value.trim();
@@ -1018,11 +1018,54 @@ function submitModal() {
 
   if (!valid) return;
 
-  // Show success
-  document.getElementById('step2').classList.add('hidden-step');
-  document.getElementById('progressFill').style.width = '100%';
-  document.getElementById('modalSuccess').classList.remove('hidden');
-  document.getElementById('stepLabel').textContent = 'Complete';
+  // Collect Step 1 data
+  const capacity = document.getElementById('investCapacity').value;
+  const assets   = [...document.querySelectorAll('#assetPills .pill.active')]
+                     .map(p => p.dataset.val).join(', ');
+
+  // Collect Freedom Age result
+  const freedomAge = document.getElementById('freedomAge').textContent.trim();
+
+  // Disable button and show sending state
+  const btn = document.querySelector('#step2 .btn-gold');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = 'Sending…';
+  btn.disabled  = true;
+
+  try {
+    const res = await fetch('https://formspree.io/f/mykllbwp', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        monthly_investment_capacity: capacity,
+        asset_portfolio:             assets,
+        freedom_age:                 freedomAge,
+        inflation_rate:              getVal('inflationSlider') + '%',
+        monthly_savings:             fmtN(getVal('monthlySavings')),
+        monthly_income_target:       fmtN(getVal('monthlyTarget')),
+        investment_yield:            getVal('investYield') + '%',
+      })
+    });
+
+    if (res.ok) {
+      // Show success
+      document.getElementById('step2').classList.add('hidden-step');
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('modalSuccess').classList.remove('hidden');
+      document.getElementById('stepLabel').textContent = 'Complete';
+    } else {
+      btn.innerHTML = originalText;
+      btn.disabled  = false;
+      alert('Something went wrong. Please try again.');
+    }
+  } catch (err) {
+    btn.innerHTML = originalText;
+    btn.disabled  = false;
+    alert('Network error. Please check your connection and try again.');
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────

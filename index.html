@@ -315,18 +315,15 @@
         </p>
       </div>
 
-      <!-- RIGHT: IAB Leaderboard 728×90 (desktop) / 320×50 (mobile) -->
-      <!-- Desktop: 728×90 Leaderboard -->
-      <div class="hidden lg:flex w-[728px] h-[90px] flex-shrink-0 rounded border border-dashed border-gray-200 bg-gray-50 items-center justify-center">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300">
-          Advertisement · 728×90 Leaderboard
-        </p>
-      </div>
-
-      <!-- Mobile: 320×50 Mobile Banner -->
-      <div class="flex lg:hidden w-full max-w-[320px] mx-auto h-[50px] rounded border border-dashed border-gray-200 bg-gray-50 items-center justify-center">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300">
-          Advertisement · 320×50
+      <!-- Responsive IAB ad unit: 728×90 desktop → 320×50 mobile -->
+      <!-- Replace the inner div with your ad network script tag when live -->
+      <div class="flex-shrink-0 flex items-center justify-center
+                  w-full lg:w-[728px]
+                  h-[50px] lg:h-[90px]
+                  rounded border border-dashed border-gray-200 bg-gray-50
+                  overflow-hidden transition-all duration-300">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 select-none">
+          Advertisement
         </p>
       </div>
 

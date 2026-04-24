@@ -368,8 +368,25 @@
   ═══════════════════════════════════════════════════════ -->
   <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr_1fr] gap-5 mb-7">
 
-    <!-- ── LEFT: Age + Savings ─────────────────────────────────── -->
+    <!-- ── LEFT: Portfolio + Age + Savings ───────────────────────── -->
     <div class="col-left flex flex-col gap-4">
+
+      <!-- Current Portfolio Value -->
+      <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+        <div class="mb-3">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 block mb-1">Current Portfolio Value</span>
+          <p class="text-xs text-gray-500 leading-snug">Include savings, PFA balance, stocks, or any invested assets.</p>
+        </div>
+        <div id="portfolioDisplay"
+             class="text-4xl font-bold tracking-tight text-gray-900 mb-4 leading-none">
+          ₦0
+        </div>
+        <input type="range" id="currentPortfolio" min="0" max="500000000" step="500000" value="0"
+               oninput="sync('currentPortfolio','portfolioDisplay', fmtN, '#111'); calculate()">
+        <div class="flex justify-between mt-2 text-[10px] text-gray-400 font-medium">
+          <span>₦0</span><span>₦500M</span>
+        </div>
+      </div>
 
       <!-- Current Age -->
       <div class="rounded-2xl bg-gray-50 border border-gray-100 p-5">
@@ -423,7 +440,11 @@
         —
       </div>
 
-      <p id="freedomLabel" class="text-[15px] font-medium text-gray-400 mb-6 min-h-[22px]"></p>
+      <p id="freedomLabel" class="text-[15px] font-medium text-gray-400 mb-2 min-h-[22px]"></p>
+
+      <p id="assumptionsLine"
+         class="text-[11px] text-gray-300 mb-6 tracking-wide">
+      </p>
 
       <div class="w-full border-t border-gray-100 mb-6"></div>
 
@@ -611,6 +632,7 @@
         <div class="mb-7">
           <label class="mf-label">Current Asset Portfolio <span class="normal-case font-normal text-gray-300">(select all that apply)</span></label>
           <div class="pill-grid" id="assetPills">
+            <span class="pill" data-val="pension"     onclick="togglePill(this)">Pension / PFA</span>
             <span class="pill" data-val="stocks"      onclick="togglePill(this)">Stocks</span>
             <span class="pill" data-val="realestate"  onclick="togglePill(this)">Real Estate</span>
             <span class="pill" data-val="mutualfunds" onclick="togglePill(this)">Mutual Funds</span>
@@ -713,12 +735,14 @@ function nestedEgg(monthlySpend, nominalReturn, inflation) {
   return monthlySpend * (1 - Math.pow(1 + rRealMonthly, -n)) / rRealMonthly;
 }
 
-function futureSavings(monthly, nominalReturn, years) {
+function futureSavings(monthly, nominalReturn, years, lumpSum = 0) {
   const rM = nominalReturn / 12;
   const mo = years * 12;
-  return rM > 1e-9
+  const fvContribs = rM > 1e-9
     ? monthly * ((Math.pow(1 + rM, mo) - 1) / rM)
     : monthly * mo;
+  const fvLumpSum = lumpSum * Math.pow(1 + nominalReturn, years);
+  return fvContribs + fvLumpSum;
 }
 
 function toTodaysMoney(futureAmt, inflation, years) {
@@ -791,17 +815,18 @@ function updateJollof() {
 // MAIN CALCULATION
 // ────────────────────────────────────────────────────────────────────────────
 function calculate() {
-  const currentAge  = getVal('currentAge');
-  const monthlySav  = getVal('monthlySavings');
-  const monthlyTgt  = getVal('monthlyTarget');
-  const nomReturn   = getVal('investYield') / 100;
-  const inflation   = getVal('inflationSlider') / 100;
+  const currentAge       = getVal('currentAge');
+  const currentPortfolio = getVal('currentPortfolio');
+  const monthlySav       = getVal('monthlySavings');
+  const monthlyTgt       = getVal('monthlyTarget');
+  const nomReturn        = getVal('investYield') / 100;
+  const inflation        = getVal('inflationSlider') / 100;
 
   const required = nestedEgg(monthlyTgt, nomReturn, inflation);
 
   let freedomAge = null;
   for (let age = currentAge + 1; age <= MAX_AGE; age++) {
-    if (futureSavings(monthlySav, nomReturn, age - currentAge) >= required) {
+    if (futureSavings(monthlySav, nomReturn, age - currentAge, currentPortfolio) >= required) {
       freedomAge = age; break;
     }
   }
@@ -815,6 +840,7 @@ function calculate() {
     ageEl.textContent  = '80+';
     ageEl.style.color  = '#dc2626';
     labelEl.textContent = '';
+    document.getElementById('assumptionsLine').textContent = '';
     checkEl.classList.add('hidden');
     impossibleEl.classList.remove('hidden');
     impossibleEl.innerHTML =
@@ -842,6 +868,9 @@ function calculate() {
   labelEl.textContent = yrs <= 1
     ? 'You can retire next year.'
     : `${yrs} years from now.`;
+
+  document.getElementById('assumptionsLine').textContent =
+    `Based on ${getVal('investYield')}% return · ${getVal('inflationSlider')}% inflation`;
 
   const todayEquiv = toTodaysMoney(monthlyTgt, inflation, yrs);
   checkEl.innerHTML =
@@ -1044,6 +1073,7 @@ async function submitModal() {
         asset_portfolio:             assets,
         freedom_age:                 freedomAge,
         inflation_rate:              getVal('inflationSlider') + '%',
+        current_portfolio_value:     fmtN(getVal('currentPortfolio')),
         monthly_savings:             fmtN(getVal('monthlySavings')),
         monthly_income_target:       fmtN(getVal('monthlyTarget')),
         investment_yield:            getVal('investYield') + '%',
@@ -1071,6 +1101,7 @@ async function submitModal() {
 // ────────────────────────────────────────────────────────────────────────────
 // INIT
 // ────────────────────────────────────────────────────────────────────────────
+sync('currentPortfolio','portfolioDisplay', fmtN,            '#111');
 sync('currentAge',    'ageDisplay',     v => v + ' yrs', '#111');
 sync('monthlySavings','savingsDisplay', fmtN,            '#111');
 sync('monthlyTarget', 'targetDisplay',  fmtN,            '#111');

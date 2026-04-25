@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retirement Freedom Calculator</title>
+<title>Freedom Age Calculator</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -597,7 +597,7 @@
 
   <!-- Disclaimer -->
   <p class="text-center text-[11px] text-gray-300 mt-10 leading-relaxed">
-    Return rate and retirement duration set by their respective sliders. Exchange rate ₦1,650/$1 (2026 baseline). Projections are illustrative only — not financial advice.
+    Return rate and Freedom Age duration set by their respective sliders. Exchange rate ₦1,650/$1 (2026 baseline). Projections are illustrative only — not financial advice.
   </p>
 
 </div><!-- /page wrapper -->
@@ -1135,14 +1135,16 @@ async function submitModal() {
 // ────────────────────────────────────────────────────────────────────────────
 // INIT
 // ────────────────────────────────────────────────────────────────────────────
-sync('currentPortfolio','portfolioDisplay', fmtN,            '#111');
-sync('currentAge',    'ageDisplay',     v => v + ' yrs', '#111');
-sync('monthlySavings','savingsDisplay', fmtN,            '#111');
-sync('monthlyTarget', 'targetDisplay',  fmtN,            '#111');
-sync('investYield',   'yieldDisplay',   v => v + '%',    '#111');
-sync('retireDuration','durationDisplay',v => v + ' yrs', '#111');
-updateJollof();
-calculate();
+document.addEventListener('DOMContentLoaded', () => {
+  sync('currentPortfolio','portfolioDisplay', fmtN,             '#111');
+  sync('currentAge',      'ageDisplay',       v => v + ' yrs',  '#111');
+  sync('monthlySavings',  'savingsDisplay',   fmtN,             '#111');
+  sync('monthlyTarget',   'targetDisplay',    fmtN,             '#111');
+  sync('investYield',     'yieldDisplay',     v => v + '%',     '#111');
+  sync('retireDuration',  'durationDisplay',  v => v + ' yrs',  '#111');
+  updateJollof();
+  calculate();
+});
 </script>
 </body>
 </html>

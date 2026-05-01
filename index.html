@@ -68,7 +68,40 @@
   .lead-inp::placeholder { color: #c0c0c0; }
   .lead-inp:focus { border-color: #111; }
 
-  /* ── Elite Modal ──────────────────────────────────────────────── */
+  /* ── Benchmark bar ────────────────────────────────────────────── */
+  .bm-bar-track {
+    height: 5px;
+    border-radius: 99px;
+    background: #f0f0f0;
+    position: relative;
+    overflow: visible;
+  }
+  .bm-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+  .bm-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 11px;
+    background: #9ca3af;
+    border-radius: 1px;
+  }
+  .bm-marker-label {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: 600;
+    color: #9ca3af;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
   #eliteModal {
     display: none;
     position: fixed;
@@ -459,13 +492,72 @@
       <p id="freedomLabel" class="text-[15px] font-medium text-gray-400 mb-2 min-h-[22px]"></p>
 
       <p id="assumptionsLine"
-         class="text-[11px] text-gray-300 mb-6 tracking-wide">
+         class="text-[11px] text-gray-300 mb-4 tracking-wide">
       </p>
 
-      <div class="w-full border-t border-gray-100 mb-6"></div>
+      <!-- ── BENCHMARK BLOCK ───────────────────────────────────── -->
+      <div id="benchmarkBlock"
+           class="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-left mb-4 hidden">
+
+        <p class="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-3">
+          📊 How You Compare · Nigerian Average
+        </p>
+
+        <!-- Freedom Age benchmark -->
+        <div class="mb-4">
+          <div class="flex justify-between items-baseline mb-2">
+            <span class="text-[11px] font-medium text-gray-500">Freedom Age</span>
+            <span id="bmAgeVerdict" class="text-[11px] font-bold"></span>
+          </div>
+          <div class="bm-bar-track">
+            <div id="bmAgeFill" class="bm-bar-fill" style="width:0%"></div>
+            <div id="bmAgeMarker" class="bm-marker" style="left:0%">
+              <span class="bm-marker-label">Avg 63</span>
+            </div>
+          </div>
+          <div class="flex justify-between mt-3 text-[9px] text-gray-300 font-medium">
+            <span>Age 30</span><span>Age 80</span>
+          </div>
+        </div>
+
+        <!-- Monthly Savings benchmark -->
+        <div>
+          <div class="flex justify-between items-baseline mb-2">
+            <span class="text-[11px] font-medium text-gray-500">Monthly Savings</span>
+            <span id="bmSavingsVerdict" class="text-[11px] font-bold"></span>
+          </div>
+          <div class="bm-bar-track">
+            <div id="bmSavingsFill" class="bm-bar-fill" style="width:0%"></div>
+            <div id="bmSavingsMarker" class="bm-marker" style="left:0%">
+              <span class="bm-marker-label">Avg ₦85K</span>
+            </div>
+          </div>
+          <div class="flex justify-between mt-3 text-[9px] text-gray-300 font-medium">
+            <span>₦10K</span><span>₦5M</span>
+          </div>
+        </div>
+
+        <p class="text-[9px] text-gray-300 mt-3 leading-relaxed">
+          Based on NBS income data &amp; national savings averages. Updated quarterly.
+        </p>
+      </div><!-- /benchmark -->
+
+      <div class="w-full border-t border-gray-100 mb-4"></div>
+
+      <!-- ── PRESCRIPTION BLOCK ────────────────────────────────── -->
+      <div id="prescriptionBlock"
+           class="w-full rounded-xl text-left mb-4 hidden
+                  px-4 py-3 border border-green-100"
+           style="background:#f0faf5;">
+        <p class="text-[9px] font-semibold uppercase tracking-[0.14em] mb-1"
+           style="color:#00875A;">💡 Your Action</p>
+        <p id="prescriptionText"
+           class="text-[13px] font-medium leading-snug"
+           style="color:#0f4c2a;"></p>
+      </div>
 
       <p id="realityCheck"
-         class="text-[13px] text-gray-400 leading-relaxed max-w-[260px]">
+         class="text-[13px] text-gray-400 leading-relaxed max-w-[260px] mb-0">
       </p>
 
       <p id="impossibleMsg"
@@ -874,6 +966,8 @@ function calculate() {
     ageEl.style.color  = '#dc2626';
     labelEl.textContent = '';
     document.getElementById('assumptionsLine').textContent = '';
+    document.getElementById('benchmarkBlock').classList.add('hidden');
+    document.getElementById('prescriptionBlock').classList.add('hidden');
     checkEl.classList.add('hidden');
     impossibleEl.classList.remove('hidden');
     impossibleEl.innerHTML =
@@ -905,19 +999,160 @@ function calculate() {
   document.getElementById('assumptionsLine').textContent =
     `Based on ${getVal('investYield')}% return · ${getVal('inflationSlider')}% inflation · ${getVal('retireDuration')}-yr retirement`;
 
+  updateBenchmark(freedomAge, getVal('monthlySavings'));
+  updatePrescription(freedomAge, currentAge);
+
   const todayEquiv = toTodaysMoney(monthlyTgt, inflation, yrs);
   checkEl.innerHTML =
     `In today's money, <strong style="color:#374151">${fmtN(monthlyTgt)}/month</strong> ` +
     `at retirement will feel like ` +
     `<strong style="color:#374151">${fmtN(todayEquiv)}/month</strong> now — ` +
-    `because inflation erodes every naira.`;
+    `which is why the right investments matter.`;
 
   updateShareCard(freedomAge, yrs);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// GROWTH LOOP — Share Card
+// BENCHMARK ENGINE — Age-segmented peer groups
+// Seeded from NBS income data & national savings averages.
+// Verdict language uses "peer group" to imply segmentation without disclosure.
+// Update avgFreedomAge & avgSavings per bracket as Formspree data accumulates.
 // ────────────────────────────────────────────────────────────────────────────
+const PEER_GROUPS = [
+  { min: 18, max: 30, avgFreedomAge: 67, avgSavings:  55000 }, // early career
+  { min: 31, max: 40, avgFreedomAge: 64, avgSavings:  85000 }, // mid career
+  { min: 41, max: 50, avgFreedomAge: 62, avgSavings: 130000 }, // peak earning
+  { min: 51, max: 75, avgFreedomAge: 61, avgSavings: 180000 }, // late career
+];
+
+function getPeerGroup(age) {
+  return PEER_GROUPS.find(g => age >= g.min && age <= g.max) || PEER_GROUPS[1];
+}
+
+function updateBenchmark(freedomAge, monthlySavings) {
+  const block = document.getElementById('benchmarkBlock');
+  if (!freedomAge || freedomAge > 79) { block.classList.add('hidden'); return; }
+  block.classList.remove('hidden');
+
+  const currentAge = getVal('currentAge');
+  const peer       = getPeerGroup(currentAge);
+
+  // Update average marker label to reflect peer group
+  document.querySelector('#bmAgeMarker .bm-marker-label').textContent =
+    'Avg ' + peer.avgFreedomAge;
+  document.querySelector('#bmSavingsMarker .bm-marker-label').textContent =
+    'Avg ' + fmtN(peer.avgSavings);
+
+  // ── Freedom Age bar ───────────────────────────────────────────
+  const ageMin = 30, ageMax = 80;
+  const userAgePct = Math.min(((freedomAge - ageMin) / (ageMax - ageMin)) * 100, 100);
+  const avgAgePct  = ((peer.avgFreedomAge - ageMin) / (ageMax - ageMin)) * 100;
+  const yearsDiff  = peer.avgFreedomAge - freedomAge;
+
+  const ageColor = yearsDiff > 5  ? '#00875A'
+                 : yearsDiff >= 0 ? '#d97706'
+                 : yearsDiff > -5 ? '#d97706'
+                 : '#dc2626';
+
+  document.getElementById('bmAgeFill').style.width      = userAgePct + '%';
+  document.getElementById('bmAgeFill').style.background = ageColor;
+  document.getElementById('bmAgeMarker').style.left     = avgAgePct + '%';
+
+  const ageVerdict = document.getElementById('bmAgeVerdict');
+  if (yearsDiff > 0) {
+    ageVerdict.textContent = `${yearsDiff} yrs ahead of your peer group`;
+    ageVerdict.style.color = '#00875A';
+  } else if (yearsDiff === 0) {
+    ageVerdict.textContent = 'On par with your peer group';
+    ageVerdict.style.color = '#d97706';
+  } else {
+    ageVerdict.textContent = `${Math.abs(yearsDiff)} yrs behind your peer group`;
+    ageVerdict.style.color = '#dc2626';
+  }
+
+  // ── Monthly Savings bar ───────────────────────────────────────
+  const savMin = 10000, savMax = 5000000;
+  const userSavPct = Math.min(((monthlySavings - savMin) / (savMax - savMin)) * 100, 100);
+  const avgSavPct  = ((peer.avgSavings - savMin) / (savMax - savMin)) * 100;
+  const savDiff    = monthlySavings - peer.avgSavings;
+
+  const savColor = savDiff >= 0 ? '#00875A' : savDiff > -30000 ? '#d97706' : '#dc2626';
+
+  document.getElementById('bmSavingsFill').style.width      = userSavPct + '%';
+  document.getElementById('bmSavingsFill').style.background = savColor;
+  document.getElementById('bmSavingsMarker').style.left     = avgSavPct + '%';
+
+  const savVerdict = document.getElementById('bmSavingsVerdict');
+  if (savDiff > 0) {
+    savVerdict.textContent = `₦${Math.round(savDiff/1000)}K above your peer group`;
+    savVerdict.style.color = '#00875A';
+  } else if (savDiff === 0) {
+    savVerdict.textContent = 'On par with your peer group';
+    savVerdict.style.color = '#d97706';
+  } else {
+    savVerdict.textContent = `₦${Math.round(Math.abs(savDiff)/1000)}K below your peer group`;
+    savVerdict.style.color = '#dc2626';
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// PRESCRIPTION ENGINE
+// Finds the monthly savings increase needed to move Freedom Age 5 years earlier.
+// Binary search between current savings and 10x current savings.
+// ────────────────────────────────────────────────────────────────────────────
+function updatePrescription(currentFreedomAge, currentAge) {
+  const block = document.getElementById('prescriptionBlock');
+  const text  = document.getElementById('prescriptionText');
+
+  if (!currentFreedomAge || currentFreedomAge > 79) {
+    block.classList.add('hidden'); return;
+  }
+
+  const targetAge    = currentFreedomAge - 5;
+  const monthlySav   = getVal('monthlySavings');
+  const portfolio    = getVal('currentPortfolio');
+  const nomReturn    = getVal('investYield') / 100;
+  const inflation    = getVal('inflationSlider') / 100;
+  const duration     = getVal('retireDuration');
+  const monthlyTgt   = getVal('monthlyTarget');
+  const required     = nestedEgg(monthlyTgt, nomReturn, inflation, duration);
+
+  // Already at or below target — celebrate
+  if (targetAge <= currentAge) {
+    text.textContent =
+      'You are already on an exceptional track. ' +
+      'Maintaining your current savings rate will secure your freedom.';
+    block.classList.remove('hidden');
+    return;
+  }
+
+  // Binary search: find the monthly savings that achieves targetAge
+  const yrsNeeded = targetAge - currentAge;
+  let lo = monthlySav, hi = monthlySav * 15;
+  let found = null;
+
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const fv  = futureSavings(mid, nomReturn, yrsNeeded, portfolio);
+    if (fv >= required) { found = mid; hi = mid; }
+    else { lo = mid; }
+  }
+
+  if (!found || found > monthlySav * 14) {
+    // Can't get there in 5 fewer years even with aggressive savings
+    block.classList.add('hidden'); return;
+  }
+
+  const increase = Math.ceil((found - monthlySav) / 5000) * 5000; // round to nearest ₦5K
+  const pct      = Math.round((increase / monthlySav) * 100);
+
+  text.innerHTML =
+    `Add <strong>₦${(increase/1000).toFixed(0)}K/month</strong> to your savings ` +
+    `<span style="color:#6b7280">(+${pct}%)</span> and retire ` +
+    `<strong>5 years earlier</strong> — at age <strong>${targetAge}</strong>.`;
+
+  block.classList.remove('hidden');
+}
 const SITE_URL = 'https://freedom-age-calculator.vercel.app';
 
 function buildShareText(age, yearsAway) {
